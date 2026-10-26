@@ -1,0 +1,27 @@
+# Copy to ./anchor.toml (or point --config / ANCHOR_CONFIG at it).
+# Every key can be overridden by an environment variable: ANCHOR_<SECTION>__<KEY>,
+# e.g. ANCHOR_TTS__BASE_URL. Keep the API key in the environment, not in this file.
+
+[tts]
+kind = "speaches"              # "speaches" or "openai" (plain OpenAI-compatible server)
+backend_id = "speaches"        # part of the Segment Cache key
+base_url = "http://127.0.0.1:8000"
+model = "speaches-ai/piper-de_DE-thorsten-medium"
+voice = "thorsten"
+sample_rate = 22050            # requested output rate; Piper low/medium/high voices = 22050
+timeout_sec = 120
+retries = 3                    # retries on connection errors and HTTP 5xx (never on 4xx)
+backoff_sec = 0.5              # first retry delay, doubled per attempt
+
+[cache]
+dir = "~/.cache/anchor/segments"
+
+[audio]
+ffmpeg = "ffmpeg"
+# pacing_file = "pacing.yaml"  # replaces values of the built-in pacing profiles
+loudness_target_lufs = -18.0
+true_peak_dbtp = -1.0
+speech_lufs = -18.0
+bed_level_lu = -42.0
+mp3_bitrate = "128k"
+opus_bitrate = "64k"

@@ -1,0 +1,49 @@
+[project]
+name = "anchor"
+version = "0.1.0"
+description = "Self-hosted goal-oriented relaxation & self-hypnosis coach — render pipeline"
+readme = "docs/spec.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "httpx>=0.27",
+    "typer>=0.12",
+    "numpy>=2.0",
+    "soundfile>=0.12",
+    "pyloudnorm>=0.1.1",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+anchor = "anchor.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/anchor"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+# German typography (quotes, dashes, ellipses) is intentional in text and comments.
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "speaches: integration test against a running Speaches backend (skipped if unreachable)",
+]

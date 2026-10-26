@@ -50,7 +50,9 @@ Energy-based: 10 ms RMS windows, threshold −45 dB relative to the unit's peak;
 
 ### D5 — Loudness
 - **Per unit:** loudness-normalize each speech unit with **pyloudnorm** (BS.1770) to the speech target. Units shorter than 400 ms (one BS.1770 block) are measured on a zero-padded copy and gain-matched by RMS.
-- **Final:** ffmpeg `loudnorm` **two-pass, linear mode**, target −18 LUFS, TP −1 dBTP; measured values written to the report. Because speech is already normalized and the bed is quiet, linear mode will normally apply; if loudnorm reports it fell back to dynamic mode, the report flags it.
+- **Peak limiting:** before the final pass, the mix gets the measured loudness gain and then a true-peak limiter (ffmpeg `alimiter`, 4× oversampled, 1 ms attack, 60 ms release, latency-compensated) with its ceiling at TP − 0.5 dB (MP3) or TP − 1.0 dB (Opus, larger encoder overshoot). Limiting lowers loudness slightly, so gain plus limiter is repeated (at most 3 times) until the remaining linear gain keeps peaks under TP. The largest gain reduction is reported as `peak_limiting_db`.
+  *Why:* Piper speech normalized to −18 LUFS peaks at a median −2.4 dBTP, and about 10 % of units exceed −1 dBTP (up to +1.1). Without limiting, loudnorm fell back to dynamic mode in every example render, which lifted the Noise Floor in long pauses by about 10 dB (−49.9 instead of −60 LUFS). The limiter only acts on those peaks (1.9–3.3 dB in the examples). It does not shorten, overlap or fade speech, and quiet audio is never touched.
+- **Final:** ffmpeg `loudnorm` **two-pass, linear mode**, target −18 LUFS, TP −1 dBTP; measured values written to the report. After limiting, linear mode applies; if loudnorm still reports dynamic mode, the report flags it.
 *Why per-unit first:* guarantees cached and fresh units match (the 2 LU scenario), independent of the engine's output level.
 
 ### D6 — Noise Floor and built-in sounds are generated, not shipped as files
@@ -97,7 +99,8 @@ Key = SHA-256 over a canonical JSON of the fields in spec §9.2 (`text_norm_vers
 - [Backend ignores `speed`] → integration test compares durations at speed 0.85 vs 1.0; if Speaches/Piper ignores it, record that in the report and pick a slower Voice, rather than time-stretching.
 - [Trimming eats soft onsets (breathy "h", "f")] → relative threshold plus 30 ms margin; unit tests with low-level onsets; listening test item.
 - [Memory for long Sessions] → 30 min at 48 kHz mono float32 ≈ 350 MB per buffer; acceptable on 8 GB with one Render Job at a time. If the worker later runs jobs concurrently, switch to chunked mixing.
-- [loudnorm falls back to dynamic mode] → flagged in the report; per-unit normalization makes it unlikely.
+- [loudnorm falls back to dynamic mode] → happened for all Piper renders (speech peaks); prevented by the true-peak limiter (D5), still flagged in the report.
+- [Limiter audibly squashes plosives] → it only acts on the few peaks above −1.5 dBTP, by about 3 dB at most in the examples; listening-test item.
 - [ffmpeg build differences] → require ffmpeg ≥ 6 with libmp3lame, libopus and soxr; checked at startup with a clear error.
 - [Sentence splitter mis-splits] → protected abbreviation list; mis-splits only change gap placement, never content.
 
