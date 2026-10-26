@@ -103,11 +103,15 @@ After synthesis, the system SHALL adjust Elastic Pauses within their ranges, pro
 - **THEN** the render fails with an error giving the achievable range and the target
 
 ### Requirement: Loudness and peaks
-Speech units SHALL be loudness-normalized individually before mixing, and the final output SHALL be normalized to a configurable integrated loudness target (default −18 LUFS) with true peak at or below −1 dBTP.
+Speech units SHALL be loudness-normalized individually before mixing, and the final output SHALL be normalized to a configurable integrated loudness target (default −18 LUFS) with true peak at or below −1 dBTP. Peaks that would exceed the true-peak limit MAY be reduced by a latency-compensated peak limiter; the final normalization SHALL be a linear gain, so the Noise Floor is not raised relative to speech.
 
 #### Scenario: Default target
 - **WHEN** a Script is rendered with default settings
 - **THEN** the output's integrated loudness is −18 LUFS ± 1 LU and its true peak is at most −1 dBTP
+
+#### Scenario: Peaky speech stays linear
+- **WHEN** speech units peak above −1 dBTP after per-unit normalization
+- **THEN** those peaks are limited, the final normalization is linear, and the background level in pauses keeps its configured distance from speech
 
 #### Scenario: Cached and fresh units match
 - **WHEN** a render mixes cached and newly synthesized speech units

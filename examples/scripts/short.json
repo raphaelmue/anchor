@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.2",
+  "session_type": "short",
+  "language": "de-DE",
+  "method": "paced_breathing",
+  "guidance_level": "semi_guided",
+  "target_duration_sec": 180,
+  "segments": [
+    { "type": "sound", "sound": "bell_soft" },
+    { "type": "speech", "role": "induction", "text": "Eine kurze Atempause für dich. Setz dich aufrecht und bequem hin und lass die Schultern sinken." },
+    { "type": "speech", "text": "Wir atmen langsam: vier Sekunden ein, sechs Sekunden aus. Das längere Ausatmen beruhigt den Körper." },
+    { "type": "speech", "text": "Atme ein, zwei, drei, vier. Und aus, zwei, drei, vier, fünf, sechs." },
+    { "type": "pause", "seconds": 4, "elastic": [3, 6] },
+    { "type": "speech", "text": "Ein, zwei, drei, vier. Und aus, zwei, drei, vier, fünf, sechs." },
+    { "type": "pause", "seconds": 4, "elastic": [3, 6] },
+    { "type": "silent_practice", "seconds": 60, "elastic": [40, 110], "prompt": "Atme jetzt in deinem eigenen Tempo weiter. Ein durch die Nase, lang aus durch den Mund." },
+    { "type": "speech", "text": "Spüre, wie dein Atem ruhiger geworden ist. Diese Ruhe kannst du jederzeit wiederfinden." },
+    { "type": "pause", "seconds": 5, "elastic": [3, 15] },
+    { "type": "speech", "role": "emergence", "text": "Atme noch einmal tief ein, streck dich ein wenig und öffne die Augen. Du bist bereit für das, was kommt." },
+    { "type": "sound", "sound": "bell_soft" }
+  ]
+}

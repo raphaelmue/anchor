@@ -1,0 +1,41 @@
+# Pacing profiles per Session Type (design D8). Initial defaults, tuned in the listening test
+# (docs/listening-test.md). Override any value via `audio.pacing_file` in anchor.toml.
+#
+#   speed            speaking-rate factor sent to the TTS Backend (the mixer never time-stretches)
+#   sentence_gap_sec gap between sentences of one speech Segment
+#   segment_gap_sec  gap between consecutive Segments
+#   fade_in_sec      background fade-in at the start
+#   fade_out_sec     fade-out after the last Segment
+
+sleep:
+  speed: 0.85
+  sentence_gap_sec: 1.6
+  segment_gap_sec: 2.5
+  fade_in_sec: 3.0
+  fade_out_sec: 30.0
+
+day: &standard
+  speed: 0.9
+  sentence_gap_sec: 1.1
+  segment_gap_sec: 1.8
+  fade_in_sec: 2.0
+  fade_out_sec: 3.0
+
+rehearsal: *standard
+taster: *standard
+
+short: &tight
+  speed: 0.95
+  sentence_gap_sec: 0.9
+  segment_gap_sec: 1.4
+  fade_in_sec: 1.5
+  fade_out_sec: 2.0
+
+cue_recall: *tight
+
+pre_event:
+  speed: 1.0
+  sentence_gap_sec: 0.7
+  segment_gap_sec: 1.0
+  fade_in_sec: 1.0
+  fade_out_sec: 1.5
