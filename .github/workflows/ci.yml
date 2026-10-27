@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      # Use LiteLLM's bundled model cost map instead of fetching it at import time.
+      LITELLM_LOCAL_MODEL_COST_MAP: "True"
+    steps:
+      - uses: actions/checkout@v4
+
+      # ffmpeg >= 6 with libmp3lame, libopus and soxr (Ubuntu 24.04: 6.1) for the render tests.
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check src tests
+
+      # Fully offline: the paid `llm` test is excluded by default (pyproject addopts), and the
+      # `speaches` tests skip themselves without a reachable backend.
+      - name: Test
+        run: uv run pytest
