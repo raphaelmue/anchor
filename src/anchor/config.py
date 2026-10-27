@@ -6,9 +6,17 @@ The file is located via the `--config` option, `ANCHOR_CONFIG`, or `./anchor.tom
 
 import os
 from pathlib import Path
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
-from pydantic import BaseModel, Field, SecretStr, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -31,6 +39,40 @@ class TTSSettings(BaseModel):
     timeout_sec: float = 120.0
     retries: int = Field(default=3, ge=0)
     backoff_sec: float = 0.5
+    # Speech Rate of the configured Voice at speed 1.0, used for the pre-render duration
+    # estimate. Derived from the M1 benchmark renders; calibrated per Voice in M7.
+    chars_per_sec: float = Field(default=21.0, gt=0)
+
+
+class LLMSettings(BaseModel):
+    """LLM Provider settings (design D3). API keys come from the provider's env vars only."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    model: str = "litellm_proxy/glm"  # LiteLLM provider/model id
+    review_model: str = ""  # empty = same as model
+    effort: str = "high"  # sent to anthropic/* and litellm_proxy/* models; omitted when empty
+    max_tokens: int = Field(default=16000, gt=0)
+    timeout_sec: float = Field(default=300.0, gt=0)
+    retries: int = Field(default=3, ge=0)
+    backoff_sec: float = 1.0
+    max_attempts: int = Field(default=3, ge=1)  # generation attempts with error feedback
+
+    @model_validator(mode="before")
+    @classmethod
+    def _reject_api_key(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            keys = [k for k in data if "key" in str(k).lower()]
+            if keys:
+                raise ValueError(
+                    f"[llm] must not contain {', '.join(sorted(keys))}: set the provider's API "
+                    "key in the environment instead (e.g. ANTHROPIC_API_KEY, OPENAI_API_KEY)"
+                )
+        return data
+
+    @property
+    def effective_review_model(self) -> str:
+        return self.review_model or self.model
 
 
 def _expand(path: Path | None) -> Path | None:
@@ -67,6 +109,7 @@ class Settings(BaseSettings):
     tts: TTSSettings = Field(default_factory=TTSSettings)
     cache: CacheSettings = Field(default_factory=CacheSettings)
     audio: AudioSettings = Field(default_factory=AudioSettings)
+    llm: LLMSettings = Field(default_factory=LLMSettings)
 
     toml_path: ClassVar[Path | None] = None
 
@@ -101,6 +144,13 @@ def load_settings(config_path: Path | None = None) -> Settings:
 
     try:
         loaded = _Settings()
-    except Exception as exc:  # pydantic ValidationError or TOML decode error
+    except ValidationError as exc:
+        # Input values are left out: they may be secrets (e.g. a misplaced API key).
+        details = "; ".join(
+            f"{'.'.join(map(str, e['loc']))}: {e['msg'].removeprefix('Value error, ')}"
+            for e in exc.errors(include_input=False, include_url=False)
+        )
+        raise ConfigError(f"invalid configuration ({path}): {details}") from None
+    except Exception as exc:  # TOML decode error
         raise ConfigError(f"invalid configuration ({path}): {exc}") from exc
     return Settings.model_validate(loaded.model_dump())

@@ -2,7 +2,7 @@
   "schema_version": "1.2",
   "session_type": "sleep",
   "language": "de-DE",
-  "method": "body_scan",
+  "method": "mindfulness_body_scan",
   "guidance_level": "guided",
   "target_duration_sec": 900,
   "segments": [

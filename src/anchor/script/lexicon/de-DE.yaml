@@ -1,0 +1,71 @@
+# Suggestion Rule lexicon for de-DE (docs/spec.md §8.2, design D8).
+#
+# Curated content: review changes like Blueprint content, and bump `version` on every change
+# (it is written into each generation record). Patterns are Python regexes, matched
+# case-insensitively on NFC text, one spoken text at a time. Keep them conservative: precision
+# over recall. The LLM Suggestion Review covers subtle cases. Every allowed phrasing in
+# tests/test_domain_suggestion.py must stay match-free.
+
+version: "de-DE.1"
+language: de-DE
+
+categories:
+  absolute:
+    description: guarantees and absolutes
+    patterns:
+      - '\bnie(?:mals)?\s+(?:wieder|mehr)\b'
+      - '\bkeine\s+(?:angst|nervosität|aufregung|sorgen|probleme)\s+mehr\b'
+      - '\bgarantier\w*'
+      - '\bgarantie\b'
+      - '\b(?:hundert|100)\s*(?:prozent|%)'
+      - '\bmit\s+(?:absoluter\s+)?sicherheit\b'
+      - '\b(?:wirst|werden)\s+(?:du\s+|sie\s+)?(?:nie|niemals)\b'
+      - '\b(?:du\s+wirst|sie\s+werden)\s+(?:die\s+prüfung\s+|es\s+)?(?:bestehen|gewinnen|schaffen)\b'
+      - '\b(?:du\s+wirst|sie\s+werden)\s+(?:garantiert\s+)?erfolgreich\s+sein\b'
+      - '\bfür\s+immer\s+(?:frei|geheilt|ruhig|angstfrei|entspannt|vorbei)\b'
+      - '\bnichts\s+(?:kann|wird)\s+(?:dich|sie)\s+(?:je(?:mals)?\s+)?(?:mehr\s+)?(?:aus\s+der\s+ruhe|stören|beunruhigen|erschüttern)'
+      - '\bimmer\s+und\s+überall\b'
+
+  medical:
+    description: medical or therapeutic claims and terms
+    patterns:
+      - '\bheil(?:t|en|st|ung)\b'
+      - '\bgeheilt\b'
+      - '\b\w*therap\w*'
+      - '\b\w*diagnos\w*'
+      - '\bmedikament\w*'
+      - '\btablette\w*'
+      - '\barznei\w*'
+      - '\b\w*trauma\w*'
+      - '\btraumati\w*'
+      - '\b(?:schlaf|angst|panik|ess|zwangs|persönlichkeits|belastungs)störung(?:en)?\b'
+      - '\bdepressi\w*'
+      - '\bpanikattacke\w*'
+      - '\bkrankheit\w*'
+      - '\bsymptom\w*'
+      - '\bpatient\w*'
+      - '\bpsychiat\w*'
+      - '\bblutdruck\w*'
+      - '\bimmunsystem\w*'
+
+  control:
+    description: commands implying loss of control
+    patterns:
+      - '\bgehorch\w*'
+      - '\bwillenlos\w*'
+      - '\bwiderstandslos\w*'
+      - '\bkeine(?:n)?\s+(?:kontrolle|wahl|eigenen\s+willen)\b'
+      - '\bkontrolle\b[^.!?]{0,30}\b(?:abgeben|aufgeben|verlieren|verlierst|übernehm\w*|übernimmt)\b'
+      - '\b(?:verlierst|verlieren|übernimmt|übernehme|übernehmen)\b[^.!?]{0,30}\bkontrolle\b'
+      - '\b(?:gib|gibst|geben\s+sie)\b[^.!?]{0,20}\bkontrolle\b[^.!?]{0,30}\bab\b'
+      - '\bunter\s+meiner\s+kontrolle\b'
+      - '\b(?:du\s+kannst|sie\s+können)\s+(?:dich\s+|sich\s+)?(?:die\s+augen\s+|den\s+arm\s+|die\s+arme\s+)?nicht\s+(?:mehr\s+)?(?:bewegen|wehren|widerstehen|öffnen|aufwachen|anders)\b'
+      - '\b(?:du\s+musst|sie\s+müssen)\s+(?:meiner\s+stimme\s+|mir\s+)?(?:folgen|tun,?\s+was)\b'
+      - '\b(?:du\s+bist|sie\s+sind)\s+(?:mir\s+)?ausgeliefert\b'
+      - '\bdein(?:\s+eigener)?\s+wille\s+(?:ist\s+(?:weg|verschwunden)|gehört)\b'
+
+  others:
+    description: other people as targets of change
+    patterns:
+      - '\b(?:dein|deine|deinen|deinem|deiner|ihr|ihre|ihren|ihrem|ihrer)\s+(?:chef\w*|partner\w*|mann|frau|freund\w*|kolleg\w*|mutter|vater|eltern|kind(?:er)?|nachbar\w*|lehrer\w*|prüfer\w*|vorgesetzte\w*|familie)\b[^.!?]{0,60}\b(?:wird|werden)\s+(?:sich\s+)?(?:ändern|verändern|einsehen|entschuldigen|respektieren|bewundern|verstehen|lieben|mögen)\b'
+      - '\b(?:die\s+anderen|andere\s+menschen|alle\s+anderen|die\s+leute|jeder|alle)\s+(?:wird|werden)\s+(?:dich|sie|ihnen)\b[^.!?]{0,40}\b(?:bewundern|respektieren|beneiden|lieben|mögen|anerkennen|zujubeln)\b'

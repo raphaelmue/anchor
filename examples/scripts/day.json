@@ -2,7 +2,7 @@
   "schema_version": "1.2",
   "session_type": "day",
   "language": "de-DE",
-  "method": "progressive_muscle_relaxation",
+  "method": "pmr",
   "guidance_level": "guided",
   "target_duration_sec": 600,
   "segments": [

@@ -12,6 +12,7 @@ sample_rate = 22050            # requested output rate; Piper low/medium/high vo
 timeout_sec = 120
 retries = 3                    # retries on connection errors and HTTP 5xx (never on 4xx)
 backoff_sec = 0.5              # first retry delay, doubled per attempt
+chars_per_sec = 21.0           # Speech Rate at speed 1.0, for the pre-render duration estimate
 
 [cache]
 dir = "~/.cache/anchor/segments"
@@ -25,3 +26,16 @@ speech_lufs = -18.0
 bed_level_lu = -42.0
 mp3_bitrate = "128k"
 opus_bitrate = "64k"
+
+[llm]
+# The API key is read from the provider's environment variable, never from this file:
+# LITELLM_PROXY_API_BASE + LITELLM_PROXY_API_KEY for litellm_proxy/*, ANTHROPIC_API_KEY for
+# anthropic/*, OPENAI_API_KEY for openai/*. A ./.env file is loaded automatically.
+model = "litellm_proxy/glm"           # LiteLLM provider/model id, e.g. "anthropic/claude-opus-5-5"
+review_model = ""                     # Suggestion Review model; empty = same as model
+effort = "high"                       # effort/reasoning level; empty = provider default
+max_tokens = 16000
+timeout_sec = 300
+retries = 3                           # retries on rate limits, timeouts, 5xx (never on 4xx)
+backoff_sec = 1.0                     # first retry delay, doubled per attempt
+max_attempts = 3                      # generation attempts with error feedback

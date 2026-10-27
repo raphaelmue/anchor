@@ -13,6 +13,8 @@ dependencies = [
     "soundfile>=0.12",
     "pyloudnorm>=0.1.1",
     "pyyaml>=6.0",
+    "python-dotenv>=1.0",
+    "litellm==1.106.4",
 ]
 
 [project.scripts]
@@ -43,7 +45,9 @@ ignore = ["RUF001", "RUF002", "RUF003"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra"
+# The paid `llm` tests run only on request: `uv run pytest -m llm`.
+addopts = "-ra -m 'not llm'"
 markers = [
     "speaches: integration test against a running Speaches backend (skipped if unreachable)",
+    "llm: paid integration test against the configured LLM Provider (only with -m llm; skipped without its API key)",
 ]

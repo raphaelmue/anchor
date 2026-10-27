@@ -1,0 +1,21 @@
+# Script Request for a `day` Session (docs/llm-scripts.md §4). Matches examples/scripts/day.json.
+session_type: day
+session_context: stage
+method: pmr
+guidance_level: guided
+target_duration_sec: 600
+language: de-DE
+goal:
+  pattern: calm_in_situation
+  domain: stress
+  target_situation: Stressige Arbeitstage mit vielen Unterbrechungen und Terminen
+  desired_state: Ruhiger und gelassener durch den Arbeitstag gehen, auch wenn viel los ist
+strategies: [calm_competence, ego_strengthening]
+cue_word_introduced: false
+style_sheet:
+  address: du
+  tone: warm, ruhig, freundlich, nicht belehrend
+  imagery: [ein ruhiger See am Morgen]
+  cue_word: Gelassen
+  cue_word_phrasing: Mit dem Wort „Gelassen“ kehrt die Ruhe zurück.
+  situation_vocabulary: [Arbeitstag, Termine, E-Mails, Besprechung]
