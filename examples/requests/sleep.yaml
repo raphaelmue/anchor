@@ -1,0 +1,18 @@
+# Script Request for a `sleep` Session. Matches examples/scripts/sleep.json.
+session_type: sleep
+session_context: stage
+method: mindfulness_body_scan
+guidance_level: guided
+target_duration_sec: 900
+language: de-DE
+goal:
+  pattern: calm_in_situation
+  domain: sleep_onset
+  target_situation: Abends im Bett, wenn die Gedanken an den nächsten Tag kreisen
+  desired_state: Zur Ruhe kommen und den Schlaf von selbst kommen lassen
+strategies: [sleep_permission, calm_competence]
+style_sheet:
+  address: du
+  tone: sehr ruhig, langsam, weich
+  imagery: [ein warmer, sicherer Ort, Wolken am Nachthimmel]
+  situation_vocabulary: [Bett, Decke, Abend, Gedanken]

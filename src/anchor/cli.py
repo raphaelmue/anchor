@@ -4,12 +4,18 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+from dotenv import load_dotenv
 
 from anchor.audio.pacing import PacingError
 from anchor.config import ConfigError, Settings, load_settings
 from anchor.ffmpeg import FFmpegError
+from anchor.generate.check import check_script
+from anchor.generate.loop import generate
+from anchor.generate.request import ScriptRequest, load_request
+from anchor.llm import LLMAdapter, LLMError
 from anchor.render import RenderError, render
 from anchor.script import load_script
+from anchor.script.domain import DomainContext
 from anchor.tts.factory import build_adapter
 
 app = typer.Typer(no_args_is_help=True, help="Anchor render pipeline.")
@@ -41,18 +47,117 @@ def _settings(ctx: typer.Context) -> Settings:
         raise _fail(f"error: {exc}") from exc
 
 
+def _llm_adapter(settings: Settings) -> LLMAdapter:
+    """The configured LLM Adapter; tests replace this function with a fake."""
+    from anchor.llm.litellm_adapter import build_llm_adapter
+
+    return build_llm_adapter(settings.llm)
+
+
+def _load_request_or_fail(path: Path) -> ScriptRequest:
+    request, errors = load_request(path)
+    if request is None:
+        lines = [f"{path}: {len(errors)} request error(s)"] + [f"  {e}" for e in errors]
+        raise _fail("\n".join(lines))
+    return request
+
+
 @app.command()
 def validate(
+    ctx: typer.Context,
     script: Annotated[Path, typer.Argument(help="Session Script JSON file.")],
+    request: Annotated[
+        Path | None,
+        typer.Option("--request", help="Script Request YAML: also run domain validation."),
+    ] = None,
+    review: Annotated[
+        bool, typer.Option("--review", help="With --request: also run the LLM Suggestion Review.")
+    ] = False,
 ) -> None:
-    """Validate a Session Script and print all structural errors."""
+    """Validate a Session Script and print all errors.
+
+    Without --request only structural validation runs. With --request the Script is also
+    checked against the domain rules for that request, and the duration estimate is printed.
+    """
+    if review and request is None:
+        raise _fail("error: --review requires --request")
     result = load_script(script)
     if not result.ok:
         lines = [f"{script}: {len(result.errors)} validation error(s)"]
         lines += [f"  {issue}" for issue in result.errors]
         raise _fail("\n".join(lines))
     s = result.script
-    typer.echo(f"{script}: valid ({s.session_type}, {len(s.segments)} segments)")
+    if request is None:
+        typer.echo(f"{script}: valid ({s.session_type}, {len(s.segments)} segments)")
+        return
+
+    req = _load_request_or_fail(request)
+    settings = _settings(ctx)
+    try:
+        checked = check_script(s, req, DomainContext.from_settings(settings),
+                               reviewer=_llm_adapter(settings) if review else None,
+                               review_model=settings.llm.effective_review_model)
+    except PacingError as exc:
+        raise _fail(f"error: {exc}") from exc
+    except LLMError as exc:
+        raise _fail(f"review failed: {exc}") from exc
+    typer.echo(f"duration: {checked.estimate.describe()}")
+    if review:
+        r = checked.review
+        typer.echo(f"review: skipped ({r.reason})" if r.skipped else
+                   f"review: {len(r.issues)} finding(s), {len(r.anomalies)} anomaly(ies)")
+    if checked.issues:
+        lines = [f"{script}: {len(checked.issues)} validation error(s)"]
+        lines += [f"  {issue}" for issue in checked.issues]
+        raise _fail("\n".join(lines))
+    passed = "domain rules and review passed" if review else "domain rules passed"
+    typer.echo(f"{script}: valid ({s.session_type}, {len(s.segments)} segments, {passed})")
+
+
+@app.command("generate")
+def generate_cmd(
+    ctx: typer.Context,
+    request: Annotated[Path, typer.Argument(help="Script Request YAML file.")],
+    output: Annotated[Path, typer.Option("-o", "--output", help="Output Session Script JSON.")],
+    no_review: Annotated[
+        bool, typer.Option("--no-review", help="Skip the LLM Suggestion Review.")
+    ] = False,
+) -> None:
+    """Generate a Session Script from a Script Request with the configured LLM.
+
+    The Script is written only if it passes structural and domain validation (and the review);
+    a generation record is written next to it on every run.
+    """
+    req = _load_request_or_fail(request)
+    settings = _settings(ctx)
+    try:
+        domain_ctx = DomainContext.from_settings(settings)
+    except PacingError as exc:
+        raise _fail(f"error: {exc}") from exc
+    adapter = _llm_adapter(settings)
+    models = [settings.llm.model] + ([] if no_review else [settings.llm.effective_review_model])
+    try:
+        if preflight := getattr(adapter, "preflight", None):
+            preflight(*models)  # fails before any request, e.g. on a missing API key
+    except LLMError as exc:
+        raise _fail(f"error: {exc}") from exc
+    result = generate(req, output, adapter=adapter, settings=settings.llm, ctx=domain_ctx,
+                      review=not no_review)
+
+    usage = result.record.totals()
+    tokens = (f"{usage['input_tokens']} in / {usage['output_tokens']} out tokens "
+              f"in {usage['calls']} call(s)")
+    review = "review skipped" if no_review else f"reviewed by {settings.llm.effective_review_model}"
+    if not result.ok:
+        lines = [f"generation {result.outcome} after {result.attempts} attempt(s) "
+                 f"({settings.llm.model}, {tokens}); errors of the last attempt:"]
+        lines += [f"  {issue}" for issue in result.errors]
+        lines.append(f"record: {result.record_path}")
+        raise _fail("\n".join(lines))
+    typer.echo(f"{output}: {result.attempts} attempt(s), {settings.llm.model}, {review}")
+    typer.echo(f"duration: {result.estimate.describe()}")
+    typer.echo(f"usage: {tokens}")
+    typer.echo(f"record: {result.record_path}")
 
 
 @app.command("render")
@@ -131,4 +236,7 @@ def tts_voices(
 
 
 def main() -> None:
+    # Secrets such as ANCHOR_TTS__API_KEY or LITELLM_PROXY_API_KEY may live in ./.env
+    # (git-ignored). Variables already set in the environment take precedence.
+    load_dotenv(Path.cwd() / ".env", override=False)
     app()

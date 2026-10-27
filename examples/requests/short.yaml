@@ -1,0 +1,16 @@
+# Script Request for a `short` Session. Matches examples/scripts/short.json.
+session_type: short
+session_context: stage
+method: paced_breathing
+guidance_level: semi_guided
+target_duration_sec: 180
+language: de-DE
+goal:
+  pattern: calm_in_situation
+  target_situation: Kurze Momente der Anspannung im Alltag, zum Beispiel vor einem Telefonat
+  desired_state: In wenigen Minuten wieder ruhig und klar werden
+strategies: [calm_competence]
+style_sheet:
+  address: du
+  tone: klar, ruhig, ermutigend
+  situation_vocabulary: [Pause, Alltag, Atem]

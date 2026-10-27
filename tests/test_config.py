@@ -71,3 +71,36 @@ def test_example_config_loads_and_expands_home(monkeypatch):
     settings = load_settings(Path(__file__).parent.parent / "anchor.example.toml")
     assert settings.cache.dir == Path("~/.cache/anchor/segments").expanduser()
     assert settings.tts.model == "speaches-ai/piper-de_DE-thorsten-medium"
+
+
+def test_llm_defaults(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    llm = load_settings().llm
+    assert llm.model == "litellm_proxy/glm"
+    assert llm.effort == "high"
+    assert llm.max_attempts == 3
+    assert load_settings().tts.chars_per_sec == 21.0
+
+
+def test_llm_model_from_env(tmp_path, monkeypatch):
+    monkeypatch.setenv("ANCHOR_LLM__MODEL", "openai/gpt-5")
+    assert load_settings(write(tmp_path)).llm.model == "openai/gpt-5"
+
+
+def test_review_model_defaults_to_model(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    llm = load_settings().llm
+    assert llm.review_model == ""
+    assert llm.effective_review_model == llm.model
+    monkeypatch.setenv("ANCHOR_LLM__REVIEW_MODEL", "openai/gpt-5")
+    assert load_settings().llm.effective_review_model == "openai/gpt-5"
+
+
+def test_api_key_in_llm_section_is_rejected(tmp_path):
+    path = tmp_path / "anchor.toml"
+    path.write_text('[llm]\nmodel = "anthropic/claude-opus-5-5"\napi_key = "sk-secret"\n')
+    with pytest.raises(ConfigError) as exc:
+        load_settings(path)
+    assert "environment" in str(exc.value)
+    assert "ANTHROPIC_API_KEY" in str(exc.value)
+    assert "sk-secret" not in str(exc.value)
